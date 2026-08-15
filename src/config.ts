@@ -7,67 +7,45 @@ export interface GeneratorConfig {
     inputPath: string;
     outputFolder: string;
     defaultOutputFile: string;
-    perFileOutput: boolean;
     extraDtsPath: string;
+    perFileOutput: boolean;
     exportedEnabled: boolean;
     useInterfaces: boolean;
     docsLevel: DocsLevel;
 }
 
-const PATH_CONFIG: Pick<GeneratorConfig, "inputPath" | "outputFolder" | "defaultOutputFile" | "extraDtsPath"> = Object.freeze({
+const DEFAULT_CONFIG: GeneratorConfig = {
     inputPath: "input/idl",
     outputFolder: "creojs",
     defaultOutputFile: "index.d.ts",
-    extraDtsPath: "input/extra.d.ts"
-});
-
-const defaultConfig: GeneratorConfig = {
-    ...PATH_CONFIG,
+    extraDtsPath: "input/extra.d.ts",
     perFileOutput: true,
     exportedEnabled: false,
     useInterfaces: true,
     docsLevel: "basic"
 };
 
-let cachedConfig: GeneratorConfig | undefined;
+let cachedConfig: GeneratorConfig;
 
-export function getConfig(): GeneratorConfig {
-    if (!cachedConfig) {
-        cachedConfig = loadConfig();
-    }
-    return cachedConfig;
-}
+export const getConfig = (): GeneratorConfig =>
+    (cachedConfig ??= loadConfig());
 
 function loadConfig(): GeneratorConfig {
     const configPath = path.resolve("config.json");
-    if (!fs.existsSync(configPath)) {
-        throw new Error(`Config file not found: ${configPath}`);
-    }
 
-    const raw = fs.readFileSync(configPath, "utf8");
-    let parsed: Partial<GeneratorConfig>;
-    try {
-        parsed = JSON.parse(raw);
-    } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
-        throw new Error(`Unable to parse config file at ${configPath}: ${reason}`);
+    const parsed = JSON.parse(
+        fs.readFileSync(configPath, "utf8")
+    ) as Partial<GeneratorConfig>;
+
+    const docsLevel = parsed.docsLevel ?? DEFAULT_CONFIG.docsLevel;
+
+    if (!["none", "basic", "full"].includes(docsLevel)) {
+        throw new Error(`Invalid docsLevel in config.json: ${docsLevel}`);
     }
 
     return {
-        ...PATH_CONFIG,
-        perFileOutput: typeof parsed.perFileOutput === "boolean" ? parsed.perFileOutput : defaultConfig.perFileOutput,
-        exportedEnabled: typeof parsed.exportedEnabled === "boolean" ? parsed.exportedEnabled : defaultConfig.exportedEnabled,
-        useInterfaces: typeof parsed.useInterfaces === "boolean" ? parsed.useInterfaces : defaultConfig.useInterfaces,
-        docsLevel: coerceDocsLevel(parsed.docsLevel)
+        ...DEFAULT_CONFIG,
+        ...parsed,
+        docsLevel
     };
-}
-
-function coerceDocsLevel(value: any): DocsLevel {
-    if (value === undefined || value === null) {
-        return defaultConfig.docsLevel;
-    }
-    if (value === "none" || value === "basic" || value === "full") {
-        return value;
-    }
-    throw new Error(`Invalid docsLevel in config.json: ${value}`);
 }

@@ -1,71 +1,77 @@
 # creojs-dts
 
-`creojs-dts` is a TypeScript definition generator (.d.ts) for the Creo.JS Toolkit from Creo Parametric. Each run emits TypeScript declaration files plus supporting `@types` metadata (per-file `.d.ts`, an `index.d.ts`, and an optional `package.json`) in the configured output folder.
+`creojs-dts` generates TypeScript declaration files (`.d.ts`) for the **Creo.JS Toolkit** used by **Creo Parametric**.
+Each run produces TypeScript declarations, an `index.d.ts`, and optional package metadata.
 
-## Install & Build
-
-### Requirements
+## Requirements
 
 - Node.js 18+
 
-### Install dependencies
+## Build
 
 ```bash
 npm install
-```
-
-### Build the generator
-
-```bash
 npm run build
 ```
 
-## Usage
+## Generate Declarations
 
-Copy the `idl` directory from `<CREO_PARAMETRIC>\Common Files\apps\creojs\otk_api_spec\OTK_model.json.zip\json\` into `input/`.
+Copy the `idl` folder from:
+
+```text
+<CREO_PARAMETRIC>\Common Files\apps\creojs\otk_api_spec\OTK_model.json.zip\json\
+```
+
+into:
+
+```text
+input/idl/
+```
+
+Run:
 
 ```bash
 npm run generate
 ```
 
-After a successful run the generator writes `.d.ts` files to the `creojs/` output folder (paths are defined directly in `src/config.ts`).
+Generated files are written to `creojs/` (configured in `src/config.ts`).
 
-- With `perFileOutput: true`, each JSON file produces `outputFolder/<jsonName>.d.ts`, and the CLI writes an `outputFolder/index.d.ts` containing triple-slash references to those files.
-- With `perFileOutput: false`, all JSON sources are merged into a single bundle named `outputFolder/<defaultOutputFile>`.
-- When present, `input/extra.d.ts` is appended verbatim to every generated declaration.
-- If `input/package.json` exists, it is copied into the `outputFolder` to match the generated declarations.
+### Output
 
-Successful runs report the output path and the number of processed JSON files.
+- `perFileOutput: true` → one `.d.ts` file per JSON source plus `index.d.ts`
+- `perFileOutput: false` → a single bundled `.d.ts` file
+- `input/extra.d.ts` (if present) is appended to generated output
+- `input/package.json` (if present) is copied to `creojs/`
+- The CLI reports the output location and number of processed files
 
+## Configuration
 
-## Configuration hints
+Only behavior settings are loaded from `config.json`. Paths are defined in `src/config.ts`.
 
-### `config.json`
+Example:
 
-The path-related settings (`inputPath`, `outputFolder`, `defaultOutputFile`, and `extraDtsPath`) are hard-coded in `src/config.ts`. Update that source file if you need different locations.
+```json
+{
+  "perFileOutput": true,
+  "exportedEnabled": false,
+  "useInterfaces": true,
+  "docsLevel": "basic"
+}
+```
 
-`config.json` continues to drive the behavioral toggles below:
+### Settings
 
-| Key | Description | Default |
-| --- | --- | --- |
-| `perFileOutput` | When `true`, every JSON source emits its own `<jsonName>.d.ts`. When `false`, all sources are merged into a single file. | `true` |
-| `exportedEnabled` | Enable `export` keywords on generated declarations (useful for module-based consumption). | `false` |
-| `useInterfaces` | Emit IDL objects as TypeScript interfaces (`true`) or classes (`false`). | `true` |
-| `docsLevel` | Controls how much source documentation is preserved (`none`, `basic`, `full`). | `basic` |
+- `perFileOutput` – Generate one file per JSON source (default: `true`)
+- `exportedEnabled` – Add `export` keywords to generated declarations (default: `false`)
+- `useInterfaces` – Generate interfaces instead of classes (default: `true`)
+- `docsLevel` – Documentation level: `none`, `basic`, or `full` (default: `basic`)
 
-- `docsLevel` accepts `none`, `basic`, or `full` to control summary, tag, and parameter documentation detail.
-- Toggle `useInterfaces`/`exportedEnabled` when you require class-based declarations or exported symbols.
+## Project Structure
 
-## Project layout
-
-| Path | Description |
-| --- | --- |
-| `src/app.ts` | CLI entry point: discovers the input files, orchestrates generation, and writes the final `output/*.d.ts` file. |
-| `src/generator.ts` | Core generator that converts declarations into ts-morph structures (interfaces, classes, enums, unions, etc.). |
-| `src/docs.ts` | Helpers for shaping documentation comments and `@tag`s; controlled by the internal `DOCS_LEVEL` flag. |
-| `input/idl/` | Source directory for Creo IDL JSON. |
-| `input/extra.d.ts` | Optional hand-authored declarations appended to the generated output. |
-| `input/package.json` | Optional manifest copied into the generated folder (handy for `@types` packaging). |
-| `<outputFolder>/` | Destination for the resulting `.d.ts` files (defaults to `creojs/`, but configurable). |
-
-
+- `src/app.ts` – CLI entry point and orchestration
+- `src/generator.ts` – Generates TypeScript declarations
+- `src/docs.ts` – Documentation generation helpers
+- `input/idl/` – Source IDL JSON files
+- `input/extra.d.ts` – Optional custom declarations
+- `input/package.json` – Optional package manifest
+- `creojs/` – Generated output

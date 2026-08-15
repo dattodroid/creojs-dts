@@ -1,9 +1,5 @@
 {
-  "inputPath": "input/idl",
-  "outputFolder": "creojs",
-  "defaultOutputFile": "index.d.ts",
   "perFileOutput": true,
-  "extraDtsPath": "input/extra.d.ts",
   "exportedEnabled": false,
   "useInterfaces": true,
   "docsLevel": "basic"
