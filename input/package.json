@@ -1,0 +1,6 @@
+{
+  "name": "@types/creojs",
+  "version": "0.1.0",
+  "types": "index.d.ts",
+  "files": ["*.d.ts"]
+}

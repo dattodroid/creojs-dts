@@ -1,0 +1,20 @@
+{
+  "name": "creojs-dts",
+  "version": "0.1.0",
+  "author": "dattodroid@gmail.com",
+  "repository": "https://github.com/dattodroid/creojs-dts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "clean:dts": "node scripts/clean.mjs creojs",
+    "pregenerate": "npm run clean:dts && npm run build",
+    "generate": "node dist/app.js"
+  },
+  "dependencies": {
+    "ts-morph": "^28.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "typescript": "^5.8.0"
+  }
+}
