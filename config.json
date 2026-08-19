@@ -1,5 +1,5 @@
 {
-  "perFileOutput": true,
+  "perFileOutput": false,
   "exportedEnabled": false,
   "useInterfaces": true,
   "docsLevel": "basic"

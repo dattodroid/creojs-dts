@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 
-//** Delete .d.ts files and package.json from project subfolder. */
+//** Delete everything inside creojs subfolder, except .gitignore. */
 
 const cwd = process.cwd();
-const dir = path.resolve(cwd, process.argv[2] ?? "creojs");
+const dir = "creojs";
 
 const relative = path.relative(cwd, dir);
 
@@ -16,7 +16,12 @@ if (
 }
 
 if (fs.existsSync(dir)) {
-    fs.readdirSync(dir)
-        .filter(file => file.endsWith(".d.ts") || file === "package.json")
-        .forEach(file => fs.unlinkSync(path.join(dir, file)));
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === ".gitignore") {
+            continue;
+        }
+
+        const fullPath = path.join(dir, entry.name);
+        fs.rmSync(fullPath, { recursive: true, force: true });
+    }
 }

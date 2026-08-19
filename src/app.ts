@@ -1,96 +1,126 @@
+// Corrected simplified DTS generator
 import fs from "node:fs";
 import path from "node:path";
-import { generate } from "./generator.js";
-import { getConfig } from "./config.js";
+import { DTSGenerator } from "./generator.js";
+import { getConfig, type GeneratorConfig } from "./config.js";
 
 Error.stackTraceLimit = Infinity;
-
-const config = getConfig();
-const input = path.resolve(config.inputPath);
-
 const log = (msg: string) => console.log(`✓ ${msg}`);
 
-const jsonFiles = getJsonFiles(input);
+const SUPPORTED_MODULES = new Set(
+    DTSGenerator.SUPPORTED_PREFIXES as readonly string[]
+);
 
-const declarations = jsonFiles.map(file => {
-    const json = JSON.parse(fs.readFileSync(file, "utf8"));
+interface DeclarationFile {
+    file: string;
+    fullPath: string;
+    dts: string;
+    module: string;
+}
 
-    return {
-        name: json.name ?? path.parse(file).name,
-        file: path.basename(file),
-        dts: generate(json).trimEnd()
-    };
-});
+const config = getConfig();
+run(config);
 
-fs.mkdirSync(config.outputFolder, { recursive: true });
+function run(config: GeneratorConfig): void {
+    const files = loadDeclarations(path.resolve(config.inputPath));
 
-config.perFileOutput
-    ? writePerFile(declarations)
-    : writeCombined(declarations);
+    fs.mkdirSync(config.outputFolder, { recursive: true });
 
-copy("input/package.json", config.outputFolder);
+    const refs = config.perFileOutput
+        ? writePerFile(files, config)
+        : writeCombined(files, config);
 
-function writePerFile(files: typeof declarations) {
-    files.forEach(file => {
-        fs.writeFileSync(
-            path.join(config.outputFolder, `${file.name}.d.ts`),
-            `${file.dts}\n`
-        );
-    });
+    addCreojsDts(refs, config.outputFolder);
 
-    const refs = files.map(
-        file => `/// <reference path="./${file.name}.d.ts" />`
-    );
+    fs.writeFileSync(path.join(config.outputFolder, "index.d.ts"), refs.join("\n") + "\n");
 
-    const extra = copy(config.extraDtsPath, config.outputFolder);
-
-    if (extra) {
-        refs.push(`/// <reference path="./${path.basename(extra)}" />`);
-    }
-
-    fs.writeFileSync(
-        path.join(config.outputFolder, "index.d.ts"),
-        `${refs.join("\n")}\n`
-    );
+    copy("input/package.json", config.outputFolder);
 
     log(`Generated ${files.length} declaration files`);
 }
 
-function writeCombined(files: typeof declarations) {
-    const extra = config.extraDtsPath && fs.existsSync(path.resolve(config.extraDtsPath))
-        ? `\n\n${fs.readFileSync(path.resolve(config.extraDtsPath), "utf8").trim()}\n`
-        : "\n";
-
-    const content = files
-        .map(file => `/* ${file.file} */\n${file.dts}`)
-        .join("\n\n") + extra;
-
-    const output =
-        files.length === 1
-            ? `${files[0].name}.d.ts`
-            : config.defaultOutputFile;
-
-    fs.writeFileSync(path.join(config.outputFolder, output), content);
-
-    log(`Generated ${output}`);
+function loadDeclarations(input: string): DeclarationFile[] {
+    return getJsonFiles(input).map(fullPath => {
+        const json = JSON.parse(fs.readFileSync(fullPath, "utf8"));
+        const module = path.basename(path.dirname(fullPath));
+        return {
+            file: path.basename(fullPath),
+            fullPath,
+            module: module,
+            dts: new DTSGenerator(module).generate(json).trimEnd()
+        };
+    });
 }
 
-function copy(source: string, destinationFolder: string) {
-    if (!source) return;
+function writePerFile(files: DeclarationFile[], config: GeneratorConfig): string[] {
+    const refs: string[] = [];
 
-    const src = path.resolve(source);
+    for (const file of files) {
+        if (!SUPPORTED_MODULES.has(file.module)) continue;
 
-    if (!fs.existsSync(src)) return;
+        const outDir = path.join(config.outputFolder, file.module);
+        fs.mkdirSync(outDir, { recursive: true });
 
-    const dst = path.join(destinationFolder, path.basename(src));
+        const base = path.parse(file.file).name;
 
-    fs.copyFileSync(src, dst);
-    log(`Copied ${path.basename(src)}`);
+        fs.writeFileSync(
+            path.join(outDir, `${base}.d.ts`),
+            `/* ${file.file} */\n${file.dts}${readExtra(file.module)}\n`
+        );
 
-    return dst;
+        refs.push(`/// <reference path="./${file.module}/${base}.d.ts" />`);
+    }
+
+    return refs;
 }
 
-function getJsonFiles(input: string) {
+function writeCombined(files: DeclarationFile[], config: GeneratorConfig): string[] {
+    const refs: string[] = [];
+    const groups = new Map<string, DeclarationFile[]>();
+
+    for (const file of files) {
+        if (!SUPPORTED_MODULES.has(file.module)) continue;
+
+        const group = groups.get(file.module);
+
+        if (group) group.push(file);
+        else groups.set(file.module, [file]);
+    }
+
+    for (const [prefix, group] of groups) {
+        const content = group
+            .map(file => `/* ${file.file} */\n${file.dts}`)
+            .join("\n\n");
+
+        fs.writeFileSync(
+            path.join(config.outputFolder, `${prefix}.d.ts`),
+            content + readExtra(prefix) + "\n"
+        );
+
+        refs.push(`/// <reference path="./${prefix}.d.ts" />`);
+    }
+
+    return refs;
+}
+
+function readExtra(prefix: string): string {
+    const file = path.resolve("input", `${prefix}.d.ts`);
+
+    return fs.existsSync(file)
+        ? `\n\n${fs.readFileSync(file, "utf8").trimEnd()}`
+        : "";
+}
+
+function addCreojsDts(refs: string[], outputFolder: string): void {
+    const source = "input/creojs.d.ts";
+
+    if (!fs.existsSync(path.resolve(source))) return;
+
+    copy(source, outputFolder);
+    refs.push('/// <reference path="./creojs.d.ts" />');
+}
+
+function getJsonFiles(input: string): string[] {
     if (!fs.existsSync(input)) {
         throw new Error(`Input not found: ${input}`);
     }
@@ -105,18 +135,36 @@ function getJsonFiles(input: string) {
         return [input];
     }
 
-    if (stat.isDirectory()) {
-        const files = fs.readdirSync(input)
-            .filter(file => file.endsWith(".json"))
-            .sort()
-            .map(file => path.join(input, file));
+    const files = walk(input);
 
-        if (!files.length) {
-            throw new Error(`No JSON files found in ${input}`);
-        }
-
-        return files;
+    if (!files.length) {
+        throw new Error(`No JSON files found in ${input}`);
     }
 
-    throw new Error("Input must be a file or directory");
+    return files.sort((a, b) => a.localeCompare(b));
+}
+
+function walk(dir: string): string[] {
+    const files: string[] = [];
+
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const fullPath = path.join(dir, entry.name);
+
+        if (entry.isDirectory()) {
+            files.push(...walk(fullPath));
+        } else if (entry.isFile() && entry.name.endsWith(".json")) {
+            files.push(fullPath);
+        }
+    }
+
+    return files;
+}
+
+function copy(source: string, outputFolder: string): void {
+    const src = path.resolve(source);
+
+    if (!fs.existsSync(src)) return;
+
+    fs.copyFileSync(src, path.join(outputFolder, path.basename(src)));
+    log(`Copied ${path.basename(src)}`);
 }

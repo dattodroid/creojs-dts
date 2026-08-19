@@ -6,8 +6,6 @@ export type DocsLevel = "none" | "basic" | "full";
 export interface GeneratorConfig {
     inputPath: string;
     outputFolder: string;
-    defaultOutputFile: string;
-    extraDtsPath: string;
     perFileOutput: boolean;
     exportedEnabled: boolean;
     useInterfaces: boolean;
@@ -17,8 +15,6 @@ export interface GeneratorConfig {
 const DEFAULT_CONFIG: GeneratorConfig = {
     inputPath: "input/idl",
     outputFolder: "creojs",
-    defaultOutputFile: "index.d.ts",
-    extraDtsPath: "input/extra.d.ts",
     perFileOutput: true,
     exportedEnabled: false,
     useInterfaces: true,
