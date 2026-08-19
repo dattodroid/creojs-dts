@@ -1,6 +1,6 @@
 import { getConfig, type DocsLevel } from "./config.js";
 
-const DOCS_LEVEL: DocsLevel = getConfig().docsLevel;
+const DOCS_LEVEL: DocsLevel = getConfig().docsDetail;
 
 export function createDocs(docs: any, extra: string[] = []): string[] | undefined {
     if (DOCS_LEVEL === "none") {

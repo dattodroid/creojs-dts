@@ -2,7 +2,12 @@ import { ModuleDeclarationKind, Project, VariableDeclarationKind } from "ts-morp
 import { createDocs, createParamTags } from "./docs.js";
 import { getConfig } from "./config.js";
 
-const { exportedEnabled: EXPORTED_ENABLED, useInterfaces: USE_INTERFACES } = getConfig();
+const {
+    emitExports: EXPORTED_ENABLED,
+    typesAsInterfaces: USE_INTERFACES,
+    enumsAs: ENUM_STYLE,
+    interfaceStaticsAs: INTERFACE_STATIC_STYLE
+} = getConfig();
 
 interface ParameterMapResult {
     list: any[];
@@ -88,52 +93,54 @@ export class DTSGenerator {
 
         file.addInterface(interface_def);
 
-        /** Define static methods as functions in a namespace with the same name as the interface */
-        // if (static_methods.length > 0) {
-        //     const namespace_declaration = file.addModule({
-        //         name: interface_name,
-        //         isExported: EXPORTED_ENABLED,
-        //         hasDeclareKeyword: true,
-        //         declarationKind: ModuleDeclarationKind.Namespace
-        //     });
-        //     for (const method of static_methods) {
-        //         namespace_declaration.addFunction({
-        //             name: method.name,
-        //             returnType: method.returnType,
-        //             parameters: method.parameters,
-        //             docs: method.docs
-        //         });
-        //     }
-        // }
-
-        /** separate interface for the static side */
-
         if (static_methods.length > 0) {
-            const static_interface_name = `${interface_name}Static`;
+            if (INTERFACE_STATIC_STYLE === "namespace") {
+                // Define static methods as functions in a namespace with the
+                // same name as the interface.
+                const namespace_declaration = file.addModule({
+                    name: interface_name,
+                    isExported: EXPORTED_ENABLED,
+                    hasDeclareKeyword: true,
+                    declarationKind: ModuleDeclarationKind.Namespace
+                });
 
-            file.addInterface({
-                isExported: false,
-                hasDeclareKeyword: false,
-                name: static_interface_name,
-                methods: static_methods.map((method: any) => ({
-                    name: method.name,
-                    returnType: method.returnType,
-                    parameters: method.parameters,
-                    docs: method.docs
-                }))
-            });
+                for (const method of static_methods) {
+                    namespace_declaration.addFunction({
+                        name: method.name,
+                        returnType: method.returnType,
+                        parameters: method.parameters,
+                        docs: method.docs
+                    });
+                }
+            } else {
+                // Separate interface for the static side, plus a const
+                // binding for the instance type.
+                const static_interface_name = `${interface_name}Static`;
 
-            file.addVariableStatement({
-                isExported: EXPORTED_ENABLED,
-                declarationKind: VariableDeclarationKind.Const,
-                hasDeclareKeyword: true,
-                declarations: [
-                    {
-                        name: interface_name,
-                        type: static_interface_name
-                    }
-                ]
-            });
+                file.addInterface({
+                    isExported: false,
+                    hasDeclareKeyword: false,
+                    name: static_interface_name,
+                    methods: static_methods.map((method: any) => ({
+                        name: method.name,
+                        returnType: method.returnType,
+                        parameters: method.parameters,
+                        docs: method.docs
+                    }))
+                });
+
+                file.addVariableStatement({
+                    isExported: EXPORTED_ENABLED,
+                    declarationKind: VariableDeclarationKind.Const,
+                    hasDeclareKeyword: true,
+                    declarations: [
+                        {
+                            name: interface_name,
+                            type: static_interface_name
+                        }
+                    ]
+                });
+            }
         }
     }
 
@@ -202,13 +209,53 @@ export class DTSGenerator {
     }
 
     private generateEnum(file: any, decl: any) {
+        if (ENUM_STYLE === "class") {
+            const enumTypeName = this.normalizeTypeName(decl.name);
+            const members = decl.values.map((v: unknown) => this.resolveEnumMember(v));
+
+            file.addClass({
+                isExported: EXPORTED_ENABLED,
+                hasDeclareKeyword: true,
+                name: enumTypeName,
+                docs: createDocs(decl.docs),
+                /**
+                 * Enum-like objects expose a string() instance method on the
+                 * underlying value type, mirroring the CreoJS runtime pattern:
+                 *
+                 *   declare class pfcFeatureType {
+                 *     string(): string;
+                 *     static readonly FEATTYPE_ANALYSIS: pfcFeatureType;
+                 *     // ...
+                 *   }
+                 */
+                methods: [
+                    {
+                        name: "string",
+                        returnType: "string",
+                        parameters: [],
+                        docs: []
+                    }
+                ],
+                properties: members.map(
+                    (member: { name: string; docs?: string[] }) => ({
+                        name: member.name,
+                        type: enumTypeName,
+                        isReadonly: true,
+                        isStatic: true,
+                        docs: member.docs
+                    })
+                )
+            });
+        }
+        else {
         file.addEnum({
             isExported: EXPORTED_ENABLED,
             hasDeclareKeyword: true,
             name: this.normalizeTypeName(decl.name),
             docs: createDocs(decl.docs),
-            members: decl.values.map((v: any) => this.resolveEnumMember(v))
+            members: decl.values.map((v: unknown) => this.resolveEnumMember(v))
         });
+        }
     }
 
     private generateSequence(file: any, decl: any) {

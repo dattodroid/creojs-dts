@@ -1,6 +1,8 @@
 {
-  "perFileOutput": false,
-  "exportedEnabled": false,
-  "useInterfaces": true,
-  "docsLevel": "basic"
+  "splitBySourceFile": false,
+  "emitExports": false,
+  "typesAsInterfaces": true,
+  "docsDetail": "basic",
+  "enumsAs": "class",
+  "interfaceStaticsAs": "interface"
 }

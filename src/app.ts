@@ -26,7 +26,7 @@ function run(config: GeneratorConfig): void {
 
     fs.mkdirSync(config.outputFolder, { recursive: true });
 
-    const refs = config.perFileOutput
+    const refs = config.splitBySourceFile
         ? writePerFile(files, config)
         : writeCombined(files, config);
 

@@ -32,10 +32,10 @@ Generated files are written to `creojs/`.
 
 ### Output
 
-- `perFileOutput: true`
+- `splitBySourceFile: true`
   - One `.d.ts` file per JSON source, written under `creojs/<module>/<name>.d.ts`
   - `creojs/index.d.ts` references each per-file declaration
-- `perFileOutput: false`
+- `splitBySourceFile: false`
   - One bundled `.d.ts` file per module prefix (`creojs/pfc.d.ts`, `creojs/wfc.d.ts`, `creojs/uifc.d.ts`, ...)
   - `creojs/index.d.ts` references each bundled module file
 - Per-module extras: `input/pfc.d.ts`, `input/wfc.d.ts`, `input/uifc.d.ts` (if present) are appended to the corresponding generated module output
@@ -51,19 +51,23 @@ Example:
 
 ```json
 {
-  "perFileOutput": false,
-  "exportedEnabled": false,
-  "useInterfaces": true,
-  "docsLevel": "basic"
+  "splitBySourceFile": false,
+  "emitExports": false,
+  "typesAsInterfaces": true,
+  "docsDetail": "basic",
+  "enumsAs": "class",
+  "interfaceStaticsAs": "interface"
 }
 ```
 
 ### Settings
 
-- `perFileOutput` – Generate one file per JSON source (default: `true`)
-- `exportedEnabled` – Add `export` keywords to generated declarations (default: `false`)
-- `useInterfaces` – Generate interfaces instead of classes (default: `true`)
-- `docsLevel` – Documentation level: `none`, `basic`, or `full` (default: `basic`)
+- `splitBySourceFile` – Generate one file per JSON source when `true`, or one bundled file per module prefix when `false` (default: `true`)
+- `emitExports` – Add `export` keywords to generated declarations (default: `false`)
+- `typesAsInterfaces` – Generate interfaces instead of classes (default: `true`)
+- `docsDetail` – Documentation details: `none`, `basic`, or `full` (default: `basic`)
+- `enumsAs` – Representation of IDL enums: `enum` (TypeScript `enum`) or `class` (class-based enum-like objects with `string()` and static readonly members, default: `class`)
+- `interfaceStaticsAs` – Static method representation when `typesAsInterfaces` is `true`: `interface` (separate `*Static` interface plus `const` binding) or `namespace` (functions in a namespace with the same name as the interface, default: `interface`)
 
 ## Project Structure
 
