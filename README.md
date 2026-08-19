@@ -16,17 +16,11 @@ npm run build
 
 ## Generate Declarations
 
-Copy the `idl` folder from:
+Copy from `<CREO_PARAMETRIC>\Common Files\apps\creojs\otk_api_spec\OTK_model.json.zip\json\`
 
-```text
-<CREO_PARAMETRIC>\Common Files\apps\creojs\otk_api_spec\OTK_model.json.zip\json\
-```
-
-into:
-
-```text
-input/idl/
-```
+* the `idl/` folder into `input/idl/` as `pfc/`
+* the `idl_wfc/` folder into `input/idl/` as `wfc/`
+* the `idl_uifc/` folder into `input/idl/` as `uifc/`
 
 Run:
 
@@ -34,30 +28,30 @@ Run:
 npm run generate
 ```
 
-Generated files are written to `creojs/` (configured in `src/config.ts`).
+Generated files are written to `creojs/`.
 
 ### Output
 
 - `perFileOutput: true`
-  - One `.d.ts` file per JSON source, written under `creojs/<prefix>/<name>.d.ts`
+  - One `.d.ts` file per JSON source, written under `creojs/<module>/<name>.d.ts`
   - `creojs/index.d.ts` references each per-file declaration
 - `perFileOutput: false`
   - One bundled `.d.ts` file per module prefix (`creojs/pfc.d.ts`, `creojs/wfc.d.ts`, `creojs/uifc.d.ts`, ...)
   - `creojs/index.d.ts` references each bundled module file
 - Per-module extras: `input/pfc.d.ts`, `input/wfc.d.ts`, `input/uifc.d.ts` (if present) are appended to the corresponding generated module output
-- Global extras: `input/creojs.d.ts` (if present) is copied to `creojs/creojs.d.ts` and referenced from `creojs/index.d.ts`
-- Package metadata: `input/package.json` (if present) is copied to `creojs/`
+- Creo.JS global extras: `input/creojs.d.ts` is copied to `creojs/creojs.d.ts` and referenced from `creojs/index.d.ts`
+- Package metadata: `input/package.json` is copied to `creojs/`
 - The CLI reports the output location and number of processed files
 
 ## Configuration
 
-Only behavior settings are loaded from `config.json`. Paths are defined in `src/config.ts`.
+Only behavior settings are loaded from `config.json`. Input (`input/`) and output (`creojs/`) path are hardcoded
 
 Example:
 
 ```json
 {
-  "perFileOutput": true,
+  "perFileOutput": false,
   "exportedEnabled": false,
   "useInterfaces": true,
   "docsLevel": "basic"
