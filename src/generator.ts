@@ -234,6 +234,12 @@ export class DTSGenerator {
                         returnType: "string",
                         parameters: [],
                         docs: []
+                    },
+                    {
+                        name: "value",
+                        returnType: "number",
+                        parameters: [],
+                        docs: []
                     }
                 ],
                 properties: members.map(
@@ -248,13 +254,13 @@ export class DTSGenerator {
             });
         }
         else {
-        file.addEnum({
-            isExported: EXPORTED_ENABLED,
-            hasDeclareKeyword: true,
-            name: this.normalizeTypeName(decl.name),
-            docs: createDocs(decl.docs),
-            members: decl.values.map((v: unknown) => this.resolveEnumMember(v))
-        });
+            file.addEnum({
+                isExported: EXPORTED_ENABLED,
+                hasDeclareKeyword: true,
+                name: this.normalizeTypeName(decl.name),
+                docs: createDocs(decl.docs),
+                members: decl.values.map((v: unknown) => this.resolveEnumMember(v))
+            });
         }
     }
 
