@@ -1,16 +1,3 @@
-declare class otkEnum {
-    string(): string;
-    value(): number;
-}
-
-declare class pfcStdColor2 extends otkEnum {
-    /** The color used for text. */
-    static readonly COLOR_LETTER: pfcStdColor2;
-    /** The color used for highlighting entities. */
-    static readonly COLOR_HIGHLIGHT: pfcStdColor2;
-    /** The color used for drawings and geometry. */
-    static readonly COLOR_DRAWING: pfcStdColor2;
-}
 
 /** -------------- OTK missing from IDL ----------------*/
 
@@ -20,20 +7,24 @@ declare interface pfcObject {
     isInstanceOf(className: string): boolean;
 }
 
-interface seq<T> {
+declare class otkEnum {
+    string(): string;
+    value(): number;
+}
+
+interface otkSeq<T> {
     getarraysize(): number;
     get(idx: number): T;
     set(idx: number, value: T): void;
     removerange(frominc: number, toexcl: number): void;
     insert(idx: number, value: T): void;
-    insertseq(idx: number, seq: seq<T>): void;
+    insertseq(idx: number, seq: otkSeq<T>): void;
     toArray(): T[];
 }
 
-declare interface stringseq extends seq<string> { }
-declare interface realseq extends seq<number> { }
-declare interface intseq extends seq<number> { }
-
+declare interface stringseq extends otkSeq<string> { }
+declare interface realseq extends otkSeq<number> { }
+declare interface intseq extends otkSeq<number> { }
 
 declare interface pfcXToolkitError extends pfcObject {
     GetMessage(): string;
@@ -42,6 +33,7 @@ declare interface pfcXToolkitError extends pfcObject {
     GetErrorCode(): number;
 }
 
+/** From ProFeatForm.h - 12.4.4.0 */
 declare const enum ProFeatFormType {
     PRO_NOTYPE = 0,
     PRO_EXTRUDE = 1,
