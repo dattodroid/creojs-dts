@@ -218,30 +218,7 @@ export class DTSGenerator {
                 hasDeclareKeyword: true,
                 name: enumTypeName,
                 docs: createDocs(decl.docs),
-                /**
-                 * Enum-like objects expose a string() instance method on the
-                 * underlying value type, mirroring the CreoJS runtime pattern:
-                 *
-                 *   declare class pfcFeatureType {
-                 *     string(): string;
-                 *     static readonly FEATTYPE_ANALYSIS: pfcFeatureType;
-                 *     // ...
-                 *   }
-                 */
-                methods: [
-                    {
-                        name: "string",
-                        returnType: "string",
-                        parameters: [],
-                        docs: []
-                    },
-                    {
-                        name: "value",
-                        returnType: "number",
-                        parameters: [],
-                        docs: []
-                    }
-                ],
+                extends: "otkEnum",
                 properties: members.map(
                     (member: { name: string; docs?: string[] }) => ({
                         name: member.name,
