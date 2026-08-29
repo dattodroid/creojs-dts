@@ -33,6 +33,38 @@ declare interface pfcXToolkitError extends pfcObject {
     GetErrorCode(): number;
 }
 
+declare const enum SelectionFilter {
+    point = "point",
+    axis = "axis",
+    datum = "datum",
+    csys = "csys",
+    feature = "feature",
+    edge = "edge",
+    sldedge = "sldedge",
+    qltedge = "qltedge",
+    curve = "curve",
+    comp_crv = "comp_crv",
+    surface = "surface",
+    sldface = "sldface",
+    qltface = "qltface",
+    dtmqlt = "dtmqlt",
+    dimension = "dimension",
+    ref_dim = "ref_dim",
+    ipar = "ipar",
+    part = "part",
+    prt_or_asm = "prt_or_asm",
+    component = "component",
+    membfeat = "membfeat",
+    dtl_symbol = "dtl_symbol",
+    any_note = "any_note",
+    draft_ent = "draft_ent",
+    dwg_table = "dwg_table",
+    table_cell = "table_cell",
+    dwg_view = "dwg_view",
+    _3d_body = "3d_body",
+    curve_end = "curve_end"
+}
+
 /** From ProFeatForm.h - 12.4.4.0 */
 declare const enum ProFeatFormType {
     PRO_NOTYPE = 0,
